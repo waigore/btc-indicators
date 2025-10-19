@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "btc-indicators"
+version = "0.3.0"
+description = "A Python library for calculating and plotting Bitcoin technical indicators"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "BTC Indicators Contributors"}
+]
+keywords = ["bitcoin", "btc", "cryptocurrency", "technical-analysis", "indicators", "mayer-multiple", "macd", "rsi"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+dependencies = [
+    "yfinance>=0.2.0",
+    "pandas>=1.3.0",
+    "matplotlib>=3.3.0",
+    "numpy>=1.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/btc-indicators"
+Repository = "https://github.com/yourusername/btc-indicators"
+Issues = "https://github.com/yourusername/btc-indicators/issues"
+
+[tool.setuptools]
+packages = ["btc_indicators"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
