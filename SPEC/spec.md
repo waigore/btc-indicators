@@ -37,6 +37,8 @@ btc-indicators/
 
 **Functions:**
 - `calculate_mayer_multiple(data, window=200)` - Price / 200-day MA
+  - Returns columns: `200_MA`, `Mayer_Multiple`, `Mayer_Multiple_Avg`
+  - `Mayer_Multiple_Avg` contains the mean of all Mayer Multiple values
 - `calculate_macd(data, fast=12, slow=26, signal=9)` - MACD indicator
 - `calculate_rsi(data, period=14)` - Relative Strength Index
 - `add_all_indicators(data)` - Calculate all indicators at once
@@ -44,7 +46,9 @@ btc-indicators/
 ### Plotting Module (`btc_indicators/plotting.py`)
 
 **Functions:**
-- `plot_mayer_multiple(data, save_path, show=True)` - Multi-panel plot with price, MA, and ratio
+- `plot_mayer_multiple(data, save_path, show=True)` - Multi-panel plot with:
+  - Panel 1: Price, 200-day MA, and price levels for MM 0.8, 1.3, 2.4 thresholds
+  - Panel 2: Mayer Multiple with reference lines (0.8, 1.0, 2.4) and average line
 - `plot_macd(data, save_path, show=True)` - Price and MACD with signal line & histogram
 - `plot_rsi(data, save_path, show=True)` - Price and RSI with overbought/oversold zones
 - `plot_all_indicators(data, save_dir, show=True)` - Generate all plots

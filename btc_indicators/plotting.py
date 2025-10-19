@@ -19,11 +19,11 @@ def plot_mayer_multiple(
     Plot BTC price, 200-day MA, and Mayer Multiple indicator.
     
     Creates a multi-panel plot showing:
-    - Panel 1: BTC price and 200-day moving average
-    - Panel 2: Mayer Multiple over time
+    - Panel 1: BTC price, 200-day moving average, and price levels for key Mayer Multiple thresholds
+    - Panel 2: Mayer Multiple over time with reference lines and average
     
     Args:
-        data: DataFrame with 'Close', '200_MA', and 'Mayer_Multiple' columns
+        data: DataFrame with 'Close', '200_MA', 'Mayer_Multiple', and 'Mayer_Multiple_Avg' columns
         save_path: Optional path to save the plot
         figsize: Figure size as (width, height) tuple
         show: Whether to display the plot
@@ -36,7 +36,7 @@ def plot_mayer_multiple(
         >>> data = calculate_mayer_multiple(data)
         >>> plot_mayer_multiple(data, save_path="mayer_multiple.png")
     """
-    required_cols = ['Close', '200_MA', 'Mayer_Multiple']
+    required_cols = ['Close', '200_MA', 'Mayer_Multiple', 'Mayer_Multiple_Avg']
     missing_cols = [col for col in required_cols if col not in data.columns]
     if missing_cols:
         raise ValueError(f"Missing required columns: {missing_cols}")
@@ -54,6 +54,15 @@ def plot_mayer_multiple(
     # Plot 1: Price and 200-day MA
     ax1.plot(plot_data.index, plot_data['Close'], label='BTC Price', color='#F7931A', linewidth=2)
     ax1.plot(plot_data.index, plot_data['200_MA'], label='200-day MA', color='#4A90E2', linewidth=2, linestyle='--')
+    
+    # Add price level lines for key Mayer Multiple thresholds
+    ax1.plot(plot_data.index, plot_data['200_MA'] * 0.8, label='MM 0.8 Price Level', 
+             color='green', linewidth=1, linestyle=':', alpha=0.7)
+    ax1.plot(plot_data.index, plot_data['200_MA'] * 1.3, label='MM 1.3 Price Level', 
+             color='orange', linewidth=1, linestyle=':', alpha=0.7)
+    ax1.plot(plot_data.index, plot_data['200_MA'] * 2.4, label='MM 2.4 Price Level', 
+             color='red', linewidth=1, linestyle=':', alpha=0.7)
+    
     ax1.set_ylabel('Price (USD)', fontsize=12)
     ax1.legend(loc='upper left', framealpha=0.9)
     ax1.grid(True, alpha=0.3)
@@ -69,6 +78,11 @@ def plot_mayer_multiple(
     ax2.axhline(y=1.0, color='gray', linestyle='-', linewidth=1, alpha=0.5, label='MM = 1.0')
     ax2.axhline(y=2.4, color='red', linestyle='--', linewidth=1, alpha=0.5, label='MM = 2.4 (Overbought)')
     ax2.axhline(y=0.8, color='green', linestyle='--', linewidth=1, alpha=0.5, label='MM = 0.8 (Oversold)')
+    
+    # Add average Mayer Multiple line
+    avg_mm = plot_data['Mayer_Multiple_Avg'].iloc[0]
+    ax2.axhline(y=avg_mm, color='purple', linestyle='-', linewidth=1.5, alpha=0.6, 
+                label=f'Average MM = {avg_mm:.2f}')
     
     ax2.set_xlabel('Date', fontsize=12)
     ax2.set_ylabel('Mayer Multiple', fontsize=12)
@@ -287,7 +301,7 @@ def plot_all_indicators(
         os.makedirs(save_dir, exist_ok=True)
     
     # Plot Mayer Multiple if available
-    if all(col in data.columns for col in ['Close', '200_MA', 'Mayer_Multiple']):
+    if all(col in data.columns for col in ['Close', '200_MA', 'Mayer_Multiple', 'Mayer_Multiple_Avg']):
         save_path = os.path.join(save_dir, 'mayer_multiple.png') if save_dir else None
         try:
             plot_mayer_multiple(data, save_path=save_path, show=show)

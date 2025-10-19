@@ -19,7 +19,7 @@ def calculate_mayer_multiple(data: pd.DataFrame, window: int = 200) -> pd.DataFr
         window: Moving average window (default: 200 days)
         
     Returns:
-        DataFrame with added columns: '200_MA' and 'Mayer_Multiple'
+        DataFrame with added columns: '200_MA', 'Mayer_Multiple', and 'Mayer_Multiple_Avg'
         
     Raises:
         ValueError: If 'Close' column is missing or insufficient data
@@ -46,6 +46,9 @@ def calculate_mayer_multiple(data: pd.DataFrame, window: int = 200) -> pd.DataFr
     
     # Calculate Mayer Multiple
     result['Mayer_Multiple'] = result['Close'] / result[f'{window}_MA']
+    
+    # Calculate average Mayer Multiple (mean of non-NaN values)
+    result['Mayer_Multiple_Avg'] = result['Mayer_Multiple'].mean()
     
     return result
 

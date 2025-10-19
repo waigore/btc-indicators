@@ -35,6 +35,7 @@ class TestCalculateMayerMultiple:
         
         assert '200_MA' in result.columns
         assert 'Mayer_Multiple' in result.columns
+        assert 'Mayer_Multiple_Avg' in result.columns
         
         # Check that calculations are correct
         ma_200 = result['Close'].rolling(window=200).mean()
@@ -47,6 +48,13 @@ class TestCalculateMayerMultiple:
             expected_mm[valid_mask],
             check_names=False
         )
+        
+        # Check that average is calculated correctly
+        expected_avg = result['Mayer_Multiple'].mean()
+        assert result['Mayer_Multiple_Avg'].iloc[0] == pytest.approx(expected_avg)
+        
+        # Check that average is consistent across all rows
+        assert result['Mayer_Multiple_Avg'].nunique() == 1
     
     def test_insufficient_data(self):
         """Test that insufficient data raises ValueError."""
@@ -248,6 +256,7 @@ class TestAddAllIndicators:
         # Check that all indicator columns are present
         assert '200_MA' in result.columns
         assert 'Mayer_Multiple' in result.columns
+        assert 'Mayer_Multiple_Avg' in result.columns
         assert 'MACD' in result.columns
         assert 'MACD_Signal' in result.columns
         assert 'MACD_Histogram' in result.columns
