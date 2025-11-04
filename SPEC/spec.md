@@ -44,6 +44,10 @@ btc-indicators/
 - `calculate_macd(data, fast=12, slow=26, signal=9)` - MACD indicator
 - `calculate_rsi(data, period=14)` - Relative Strength Index
 - `add_all_indicators(data)` - Calculate all indicators at once
+- `calculate_power_law(data, genesis_date=None, A=None, B=None, days_per_year=365.25, lower_multiplier=0.5, upper_multiplier=3.0, price_col='Close')`
+  - Computes years since genesis `t` and power law curves
+  - Defaults: `genesis_date=2009-01-03`, `A=10 ** (-1.847796462)`, `B=5.616314045`
+  - Outputs columns: `t`, `PowerLaw_Fair`, `PowerLaw_Lower`, `PowerLaw_Upper`
 
 ### Plotting Module (`btc_indicators/plotting.py`)
 
@@ -54,6 +58,10 @@ btc-indicators/
 - `plot_macd(data, save_path, show=True)` - Price and MACD with signal line & histogram
 - `plot_rsi(data, save_path, show=True)` - Price and RSI with overbought/oversold zones
 - `plot_all_indicators(data, save_dir, show=True)` - Generate all plots
+- `plot_power_law(data, save_path=None, figsize=(12, 8), show=True, show_future=False, years_ahead=20.0, future_points=500)`
+  - Separate log-log plot: x = `t` (years since genesis), y = price
+  - Requires columns: `Close`, `t`, `PowerLaw_Fair`, `PowerLaw_Lower`, `PowerLaw_Upper`
+  - Optional future projection curves up to `years_ahead` (default 20)
 
 ## Utility Scripts
 
@@ -102,7 +110,9 @@ python utils/drawplots.py --save-dir plots/ --display
 from btc_indicators import (
     fetch_btc_data,
     calculate_mayer_multiple,
-    plot_mayer_multiple
+    calculate_power_law,
+    plot_mayer_multiple,
+    plot_power_law
 )
 
 # Fetch data
@@ -111,8 +121,12 @@ data = fetch_btc_data(start_date="2020-01-01")
 # Calculate indicator
 data = calculate_mayer_multiple(data)
 
+# Power law curves
+data = calculate_power_law(data)
+
 # Plot
 plot_mayer_multiple(data, save_path="mayer.png")
+plot_power_law(data, save_path="power_law.png", show_future=True, years_ahead=20)
 ```
 
 ## Installation

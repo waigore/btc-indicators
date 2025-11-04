@@ -5,6 +5,7 @@ Technical indicators calculation module for BTC-USD data.
 import pandas as pd
 import numpy as np
 from typing import Optional
+from datetime import datetime
 
 
 def calculate_mayer_multiple(data: pd.DataFrame, window: int = 200) -> pd.DataFrame:
@@ -226,3 +227,85 @@ def add_all_indicators(
     
     return result
 
+
+def calculate_power_law(
+    data: pd.DataFrame,
+    genesis_date: Optional[datetime] = None,
+    A: Optional[float] = None,
+    B: Optional[float] = None,
+    days_per_year: float = 365.25,
+    lower_multiplier: float = 0.5,
+    upper_multiplier: float = 3.0,
+    price_col: str = 'Close'
+) -> pd.DataFrame:
+    """
+    Calculate the Bitcoin power law fair value and bands.
+
+    Computes time since genesis in years (t), a power law fair price curve,
+    and lower/upper bands as constant multiples of the fair curve.
+
+    Args:
+        data: DataFrame with a DateTimeIndex and price column (default 'Close').
+        genesis_date: Network genesis date; defaults to 2009-01-03.
+        A: Power law scaling factor; defaults to 10 ** (-1.847796462).
+        B: Power law exponent; defaults to 5.616314045.
+        days_per_year: Normalization for years (default 365.25).
+        lower_multiplier: Lower band multiplier (default 0.5).
+        upper_multiplier: Upper band multiplier (default 3.0).
+        price_col: Name of the price column (default 'Close').
+
+    Returns:
+        DataFrame with added columns:
+        - 't': years since genesis
+        - 'PowerLaw_Fair': fair price per power law
+        - 'PowerLaw_Lower': lower band (multiplier * fair)
+        - 'PowerLaw_Upper': upper band (multiplier * fair)
+
+    Raises:
+        ValueError: If required inputs are missing or data is invalid.
+    """
+    if price_col not in data.columns:
+        raise ValueError(f"DataFrame must contain '{price_col}' column")
+
+    if genesis_date is None:
+        genesis_date = datetime(2009, 1, 3)
+
+    if A is None:
+        A = 10 ** (-1.847796462)
+    if B is None:
+        B = 5.616314045
+
+    # Create a copy to avoid modifying original
+    result = data.copy()
+
+    # Validate DateTimeIndex
+    if not isinstance(result.index, pd.DatetimeIndex):
+        # Attempt to convert index to datetime if possible
+        try:
+            result.index = pd.to_datetime(result.index)
+        except Exception as exc:
+            raise ValueError("Index must be a DatetimeIndex or convertible to datetime") from exc
+    # Normalize timezone to naive to allow subtraction with naive genesis_date
+    if isinstance(result.index, pd.DatetimeIndex) and result.index.tz is not None:
+        try:
+            result.index = result.index.tz_convert(None)
+        except Exception:
+            # If tz_convert fails (e.g., index is tz-aware but not localized), fall back
+            result.index = result.index.tz_localize(None)
+
+    # Compute days since genesis and filter to post-genesis
+    result['Days'] = (result.index - genesis_date).days
+    result = result[result['Days'] >= 0].copy()
+
+    if result.empty:
+        raise ValueError("No data on or after genesis date after filtering")
+
+    # Normalized time in years
+    result['t'] = result['Days'] / days_per_year
+
+    # Power law fair price and bands
+    result['PowerLaw_Fair'] = A * (result['t'] ** B)
+    result['PowerLaw_Lower'] = lower_multiplier * result['PowerLaw_Fair']
+    result['PowerLaw_Upper'] = upper_multiplier * result['PowerLaw_Fair']
+
+    return result

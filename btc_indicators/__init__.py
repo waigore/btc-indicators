@@ -18,14 +18,16 @@ from btc_indicators.indicators import (
     calculate_mayer_multiple,
     calculate_macd,
     calculate_rsi,
-    add_all_indicators
+    add_all_indicators,
+    calculate_power_law
 )
 
 from btc_indicators.plotting import (
     plot_mayer_multiple,
     plot_macd,
     plot_rsi,
-    plot_all_indicators
+    plot_all_indicators,
+    plot_power_law
 )
 
 # Define public API
@@ -39,12 +41,14 @@ __all__ = [
     'calculate_macd',
     'calculate_rsi',
     'add_all_indicators',
+    'calculate_power_law',
     
     # Plotting functions
     'plot_mayer_multiple',
     'plot_macd',
     'plot_rsi',
     'plot_all_indicators',
+    'plot_power_law',
     
     # Metadata
     '__version__',

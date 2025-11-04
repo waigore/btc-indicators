@@ -18,7 +18,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from btc_indicators import (
     load_data_from_csv,
     add_all_indicators,
-    plot_all_indicators
+    plot_all_indicators,
+    calculate_power_law,
+    plot_power_law
 )
 
 
@@ -137,6 +139,11 @@ def main():
     print("Calculating indicators...")
     try:
         data = add_all_indicators(data)
+        # Add power law curves for plotting
+        try:
+            data = calculate_power_law(data)
+        except Exception as e:
+            print(f"Warning: Could not calculate Power Law: {e}")
         print("✓ All indicators calculated")
         print()
     except Exception as e:
@@ -155,12 +162,34 @@ def main():
             save_dir=args.save_dir,
             show=args.display
         )
+
+        # Ensure power law plot includes the entire history from earliest available price
+        try:
+            # Reload full history irrespective of --start to ensure earliest available price is included
+            full_data = load_data_from_csv(
+                start_date='2009-01-01',
+                end_date=end_date,
+                data_dir=args.data_dir
+            )
+            pl_data = calculate_power_law(full_data)
+            save_path = os.path.join(args.save_dir, 'power_law.png') if args.save_dir else None
+            plot_power_law(
+                pl_data,
+                save_path=save_path,
+                show=args.display,
+                show_future=True,
+                years_ahead=10.0,
+                future_points=500
+            )
+        except Exception as e:
+            print(f"Warning: Could not render Power Law with full history: {e}")
         
         print()
         print(f"✓ Plots saved to {args.save_dir}/")
         print(f"  - mayer_multiple.png")
         print(f"  - macd.png")
         print(f"  - rsi.png")
+        print(f"  - power_law.png")
         
         if args.display:
             print("✓ Plots displayed interactively")

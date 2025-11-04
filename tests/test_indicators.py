@@ -10,7 +10,8 @@ from btc_indicators.indicators import (
     calculate_mayer_multiple,
     calculate_macd,
     calculate_rsi,
-    add_all_indicators
+    add_all_indicators,
+    calculate_power_law
 )
 
 
@@ -278,4 +279,65 @@ class TestAddAllIndicators:
         result = add_all_indicators(self.data)
         
         assert set(self.data.columns) == original_cols
+
+
+class TestCalculatePowerLaw:
+    """Tests for calculate_power_law function."""
+
+    def setup_method(self):
+        dates = pd.date_range('2010-01-01', periods=10, freq='365D')
+        # Simple monotonic prices to avoid zeros
+        self.data = pd.DataFrame({
+            'Open': np.linspace(1, 10, len(dates)),
+            'High': np.linspace(1, 10, len(dates)) + 0.1,
+            'Low': np.linspace(1, 10, len(dates)) - 0.1,
+            'Close': np.linspace(1, 10, len(dates)),
+            'Volume': np.linspace(1e6, 2e6, len(dates)),
+        }, index=dates)
+
+    def test_basic_power_law(self):
+        result = calculate_power_law(self.data)
+
+        assert 't' in result.columns
+        assert 'PowerLaw_Fair' in result.columns
+        assert 'PowerLaw_Lower' in result.columns
+        assert 'PowerLaw_Upper' in result.columns
+
+        # Check fair price equals A * t^B for nonzero t
+        A = 10 ** (-1.847796462)
+        B = 5.616314045
+        valid = result['t'] > 0
+        expected = A * (result.loc[valid, 't'] ** B)
+        pd.testing.assert_series_equal(
+            result.loc[valid, 'PowerLaw_Fair'],
+            expected,
+            check_names=False
+        )
+
+        # Check bands
+        np.testing.assert_allclose(
+            result.loc[valid, 'PowerLaw_Lower'].to_numpy(),
+            (0.5 * expected).to_numpy(),
+            rtol=1e-12,
+            atol=0.0
+        )
+        np.testing.assert_allclose(
+            result.loc[valid, 'PowerLaw_Upper'].to_numpy(),
+            (3.0 * expected).to_numpy(),
+            rtol=1e-12,
+            atol=0.0
+        )
+
+    def test_missing_close_raises(self):
+        bad = self.data.drop(columns=['Close'])
+        with pytest.raises(ValueError):
+            calculate_power_law(bad)
+
+    def test_all_pre_genesis_filtered(self):
+        # Set dates before 2009 entirely
+        dates = pd.date_range('2000-01-01', periods=len(self.data), freq='365D')
+        bad = self.data.copy()
+        bad.index = dates
+        with pytest.raises(ValueError):
+            calculate_power_law(bad)
 

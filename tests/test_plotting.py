@@ -15,12 +15,14 @@ from btc_indicators.plotting import (
     plot_mayer_multiple,
     plot_macd,
     plot_rsi,
-    plot_all_indicators
+    plot_all_indicators,
+    plot_power_law
 )
 from btc_indicators.indicators import (
     calculate_mayer_multiple,
     calculate_macd,
-    calculate_rsi
+    calculate_rsi,
+    calculate_power_law
 )
 
 
@@ -189,9 +191,10 @@ class TestPlotAllIndicators:
             'Volume': np.random.uniform(1e9, 5e9, len(dates)),
         }, index=dates)
         
-        # Add all indicators
+        # Add all indicators and power law
         from btc_indicators.indicators import add_all_indicators
-        self.data = add_all_indicators(data)
+        tmp = add_all_indicators(data)
+        self.data = calculate_power_law(tmp)
         self.test_dir = tempfile.mkdtemp()
     
     def teardown_method(self):
@@ -212,6 +215,7 @@ class TestPlotAllIndicators:
         assert os.path.exists(os.path.join(self.test_dir, 'mayer_multiple.png'))
         assert os.path.exists(os.path.join(self.test_dir, 'macd.png'))
         assert os.path.exists(os.path.join(self.test_dir, 'rsi.png'))
+        assert os.path.exists(os.path.join(self.test_dir, 'power_law.png'))
     
     def test_plot_all_partial_indicators(self):
         """Test plotting when only some indicators are available."""
@@ -220,4 +224,40 @@ class TestPlotAllIndicators:
         
         # Should not raise, just skip unavailable plots
         plot_all_indicators(partial_data, show=False)
+
+
+class TestPlotPowerLaw:
+    """Tests for plot_power_law function."""
+
+    def setup_method(self):
+        dates = pd.date_range('2011-01-01', periods=400, freq='D')
+        data = pd.DataFrame({
+            'Open': np.linspace(1, 100, len(dates)),
+            'High': np.linspace(1, 100, len(dates)) + 0.5,
+            'Low': np.linspace(1, 100, len(dates)) - 0.5,
+            'Close': np.linspace(1, 100, len(dates)),
+            'Volume': np.linspace(1e6, 2e6, len(dates)),
+        }, index=dates)
+        self.data = calculate_power_law(data)
+        self.test_dir = tempfile.mkdtemp()
+
+    def teardown_method(self):
+        plt.close('all')
+        if os.path.exists(self.test_dir):
+            shutil.rmtree(self.test_dir)
+
+    def test_plot_without_save(self):
+        plot_power_law(self.data, show=False)
+
+    def test_plot_with_save(self):
+        save_path = os.path.join(self.test_dir, 'power_law.png')
+        plot_power_law(self.data, save_path=save_path, show=False)
+        assert os.path.exists(save_path)
+        assert os.path.getsize(save_path) > 0
+
+    def test_plot_with_future(self):
+        save_path = os.path.join(self.test_dir, 'power_law_future.png')
+        plot_power_law(self.data, save_path=save_path, show=False, show_future=True, years_ahead=1)
+        assert os.path.exists(save_path)
+        assert os.path.getsize(save_path) > 0
 

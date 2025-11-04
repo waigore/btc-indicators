@@ -7,6 +7,8 @@ import matplotlib.dates as mdates
 import pandas as pd
 from typing import Optional
 import os
+import numpy as np
+from datetime import datetime
 
 
 def plot_mayer_multiple(
@@ -325,4 +327,116 @@ def plot_all_indicators(
             plot_rsi(data, save_path=save_path, show=show)
         except Exception as e:
             print(f"Error plotting RSI: {e}")
+
+    # Plot Power Law if available
+    if all(col in data.columns for col in ['Close', 't', 'PowerLaw_Fair', 'PowerLaw_Lower', 'PowerLaw_Upper']):
+        save_path = os.path.join(save_dir, 'power_law.png') if save_dir else None
+        try:
+            plot_power_law(data, save_path=save_path, show=show)
+        except Exception as e:
+            print(f"Error plotting Power Law: {e}")
+
+
+def plot_power_law(
+    data: pd.DataFrame,
+    save_path: Optional[str] = None,
+    figsize: tuple = (12, 8),
+    show: bool = True,
+    show_future: bool = False,
+    years_ahead: float = 10.0,
+    future_points: int = 500
+) -> None:
+    """
+    Plot a log-log chart of BTC price vs time since genesis with power law curves.
+
+    Renders a separate plot with historical Close prices against years since
+    genesis (t), along with the power law fair value and bands. Optionally
+    extends the fair value and bands into the future.
+
+    Args:
+        data: DataFrame with columns 'Close', 't', 'PowerLaw_Fair',
+              'PowerLaw_Lower', 'PowerLaw_Upper'.
+        save_path: Optional path to save the plot image.
+        figsize: Figure size (width, height).
+        show: Whether to display the plot.
+        show_future: Whether to draw future projections.
+        years_ahead: Number of years to project into the future (default 20).
+        future_points: Number of points to use for future curves.
+
+    Raises:
+        ValueError: If required columns are missing or no data to plot.
+    """
+    required_cols = ['Close', 't', 'PowerLaw_Fair', 'PowerLaw_Lower', 'PowerLaw_Upper']
+    missing_cols = [col for col in required_cols if col not in data.columns]
+    if missing_cols:
+        raise ValueError(f"Missing required columns: {missing_cols}")
+
+    # Do not drop rows globally; instead mask each series to retain as much as possible from earliest date
+    df = data[required_cols].copy()
+    if df.empty:
+        raise ValueError("No data available to plot")
+
+    x_dates = df.index
+
+    fig, ax = plt.subplots(figsize=figsize)
+    # Close prices: show where available and > 0 on log scale
+    close_mask = df['Close'].notna() & (df['Close'] > 0)
+    ax.plot(x_dates[close_mask], df.loc[close_mask, 'Close'], label='Historical BTC Price', color='black', linewidth=1)
+    # Power law curves: avoid zeros/negatives for log scale
+    fair_mask = df['PowerLaw_Fair'].notna() & (df['PowerLaw_Fair'] > 0)
+    lower_mask = df['PowerLaw_Lower'].notna() & (df['PowerLaw_Lower'] > 0)
+    upper_mask = df['PowerLaw_Upper'].notna() & (df['PowerLaw_Upper'] > 0)
+    ax.plot(x_dates[fair_mask], df.loc[fair_mask, 'PowerLaw_Fair'], label='Power Law Fair Price', color='blue', linestyle='--')
+    ax.plot(x_dates[lower_mask], df.loc[lower_mask, 'PowerLaw_Lower'], label='Lower Band (0.5x)', color='green', linestyle=':')
+    ax.plot(x_dates[upper_mask], df.loc[upper_mask, 'PowerLaw_Upper'], label='Upper Band (3x)', color='red', linestyle=':')
+    ax.set_yscale('log')
+
+    # Optional future projection using default constants (to match indicator defaults)
+    if show_future:
+        # Derive an approximate genesis date from current data and t
+        days_per_year = 365.25
+        t_series = df['t'].dropna()
+        if not t_series.empty:
+            first_date = t_series.index[0]
+            first_t = float(t_series.iloc[0])
+            try:
+                genesis_dt = first_date - pd.to_timedelta(first_t * days_per_year, unit='D')
+            except Exception:
+                genesis_dt = first_date
+
+            A = 10 ** (-1.847796462)
+            B = 5.616314045
+            current_t = float(t_series.iloc[-1])
+            t_future = np.linspace(current_t, current_t + float(years_ahead), int(future_points))
+            future_fair = A * (t_future ** B)
+            future_lower = 0.5 * future_fair
+            future_upper = 3.0 * future_fair
+            future_dates = genesis_dt + pd.to_timedelta(t_future * days_per_year, unit='D')
+
+            ax.plot(future_dates, future_fair, color='blue', linestyle='--', alpha=0.7)
+            ax.plot(future_dates, future_lower, color='green', linestyle=':', alpha=0.7)
+            ax.plot(future_dates, future_upper, color='red', linestyle=':', alpha=0.7)
+
+    ax.set_xlabel('Date')
+    ax.set_ylabel('Bitcoin Price (USD, log scale)')
+    ax.set_title('Bitcoin Price Power Law Curve')
+    ax.legend()
+    ax.grid(True, which='both', ls='--', alpha=0.5)
+
+    # Format x-axis as dates
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45, ha='right')
+
+    plt.tight_layout()
+
+    if save_path:
+        os.makedirs(os.path.dirname(save_path) if os.path.dirname(save_path) else '.', exist_ok=True)
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Plot saved to {save_path}")
+
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
