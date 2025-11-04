@@ -38,7 +38,9 @@ btc-indicators/
 **Functions:**
 - `calculate_mayer_multiple(data, window=200)` - Price / 200-day MA
   - Returns columns: `200_MA`, `Mayer_Multiple`, `Mayer_Multiple_Avg`
+  - Also returns price threshold columns: `MM_0.8_Price`, `MM_1.3_Price`, `MM_2.4_Price`
   - `Mayer_Multiple_Avg` contains the mean of all Mayer Multiple values
+  - Price threshold columns represent price levels at key Mayer Multiple ratios (0.8x, 1.3x, 2.4x of 200-day MA)
 - `calculate_macd(data, fast=12, slow=26, signal=9)` - MACD indicator
 - `calculate_rsi(data, period=14)` - Relative Strength Index
 - `add_all_indicators(data)` - Calculate all indicators at once

@@ -19,7 +19,13 @@ def calculate_mayer_multiple(data: pd.DataFrame, window: int = 200) -> pd.DataFr
         window: Moving average window (default: 200 days)
         
     Returns:
-        DataFrame with added columns: '200_MA', 'Mayer_Multiple', and 'Mayer_Multiple_Avg'
+        DataFrame with added columns:
+        - '200_MA': 200-day moving average
+        - 'Mayer_Multiple': Price / 200-day MA ratio
+        - 'Mayer_Multiple_Avg': Mean of all Mayer Multiple values
+        - 'MM_0.8_Price': Price level at 0.8x the 200-day MA (oversold threshold)
+        - 'MM_1.3_Price': Price level at 1.3x the 200-day MA
+        - 'MM_2.4_Price': Price level at 2.4x the 200-day MA (overbought threshold)
         
     Raises:
         ValueError: If 'Close' column is missing or insufficient data
@@ -49,6 +55,11 @@ def calculate_mayer_multiple(data: pd.DataFrame, window: int = 200) -> pd.DataFr
     
     # Calculate average Mayer Multiple (mean of non-NaN values)
     result['Mayer_Multiple_Avg'] = result['Mayer_Multiple'].mean()
+    
+    # Calculate price levels for key Mayer Multiple thresholds
+    result['MM_0.8_Price'] = result[f'{window}_MA'] * 0.8
+    result['MM_1.3_Price'] = result[f'{window}_MA'] * 1.3
+    result['MM_2.4_Price'] = result[f'{window}_MA'] * 2.4
     
     return result
 

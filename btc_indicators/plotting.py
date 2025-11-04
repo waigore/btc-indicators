@@ -23,7 +23,8 @@ def plot_mayer_multiple(
     - Panel 2: Mayer Multiple over time with reference lines and average
     
     Args:
-        data: DataFrame with 'Close', '200_MA', 'Mayer_Multiple', and 'Mayer_Multiple_Avg' columns
+        data: DataFrame with 'Close', '200_MA', 'Mayer_Multiple', 'Mayer_Multiple_Avg',
+              'MM_0.8_Price', 'MM_1.3_Price', and 'MM_2.4_Price' columns
         save_path: Optional path to save the plot
         figsize: Figure size as (width, height) tuple
         show: Whether to display the plot
@@ -36,7 +37,8 @@ def plot_mayer_multiple(
         >>> data = calculate_mayer_multiple(data)
         >>> plot_mayer_multiple(data, save_path="mayer_multiple.png")
     """
-    required_cols = ['Close', '200_MA', 'Mayer_Multiple', 'Mayer_Multiple_Avg']
+    required_cols = ['Close', '200_MA', 'Mayer_Multiple', 'Mayer_Multiple_Avg', 
+                     'MM_0.8_Price', 'MM_1.3_Price', 'MM_2.4_Price']
     missing_cols = [col for col in required_cols if col not in data.columns]
     if missing_cols:
         raise ValueError(f"Missing required columns: {missing_cols}")
@@ -56,11 +58,11 @@ def plot_mayer_multiple(
     ax1.plot(plot_data.index, plot_data['200_MA'], label='200-day MA', color='#4A90E2', linewidth=2, linestyle='--')
     
     # Add price level lines for key Mayer Multiple thresholds
-    ax1.plot(plot_data.index, plot_data['200_MA'] * 0.8, label='MM 0.8 Price Level', 
+    ax1.plot(plot_data.index, plot_data['MM_0.8_Price'], label='MM 0.8 Price Level', 
              color='green', linewidth=1, linestyle=':', alpha=0.7)
-    ax1.plot(plot_data.index, plot_data['200_MA'] * 1.3, label='MM 1.3 Price Level', 
+    ax1.plot(plot_data.index, plot_data['MM_1.3_Price'], label='MM 1.3 Price Level', 
              color='orange', linewidth=1, linestyle=':', alpha=0.7)
-    ax1.plot(plot_data.index, plot_data['200_MA'] * 2.4, label='MM 2.4 Price Level', 
+    ax1.plot(plot_data.index, plot_data['MM_2.4_Price'], label='MM 2.4 Price Level', 
              color='red', linewidth=1, linestyle=':', alpha=0.7)
     
     ax1.set_ylabel('Price (USD)', fontsize=12)
